@@ -23,4 +23,5 @@ public class Product {
     String productName;
     int productPrice;
     int productAmount;
+    String productImageUrl;
 }
