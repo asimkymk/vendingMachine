@@ -23,3 +23,8 @@
 hs_err_pid*
 replay_pid*
 *.lst
+
+#custom ignores
+/.mvn
+/.settings
+/target
