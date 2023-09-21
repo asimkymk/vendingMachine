@@ -18,7 +18,8 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
     }
-
+    
+    
     // getters and setters
 
     public boolean isSuccess() {

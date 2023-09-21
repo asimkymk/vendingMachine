@@ -4,6 +4,7 @@ import com.aselsan.vendingMachine.entities.ActiveWallet;
 import com.aselsan.vendingMachine.entities.Product;
 import com.aselsan.vendingMachine.repositories.ActiveWalletRepository;
 import com.aselsan.vendingMachine.response.ApiResponse;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +37,18 @@ public class ActiveWalletController {
     @PutMapping()
     @CrossOrigin
     @Transactional
-    public ApiResponse<ActiveWallet> updateWallet(@RequestBody ActiveWallet requestBody) {
+    public ApiResponse<ActiveWallet> updateWallet(@RequestBody Map<String,Integer> requestBody) {
         try {
             Optional<ActiveWallet> activeWallet = this.activeWalletRepository.findById(1L);
             if (activeWallet.isPresent()) {
                 ActiveWallet foundWallet = activeWallet.get();
-                // Assuming the requestBody contains the new wallet amount
-                foundWallet.setWalletAmount(requestBody.getWalletAmount());
+                 if (requestBody.get("add") != null) {
+                    foundWallet.setWalletAmount(foundWallet.getWalletAmount() + requestBody.get("add"));
+                    logger.info("Added money to wallet with Price: {}", requestBody.get("add"));
+                }
+                if (requestBody.get("remove") != null) {
+                    foundWallet.setWalletAmount(foundWallet.getWalletAmount() - requestBody.get("remove"));
+                }
                 this.activeWalletRepository.save(foundWallet);
                 return new ApiResponse<>(true, "Wallet updated successfully", foundWallet);
             } else {
