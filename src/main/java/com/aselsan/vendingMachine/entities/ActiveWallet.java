@@ -14,13 +14,11 @@ import lombok.Data;
  * @author asimk
  */
 @Entity
-@Table(name="unit")
+@Table(name="activeWallet")
 @Data
-public class Unit {
+public class ActiveWallet {
     @Id
     int id;
     
-    int unitPrice;
-    int unitAmount;
-    int tempAmount;
+    int walletAmount;
 }

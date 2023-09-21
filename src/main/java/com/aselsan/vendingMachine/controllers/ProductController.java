@@ -1,68 +1,114 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.aselsan.vendingMachine.controllers;
 
 import com.aselsan.vendingMachine.entities.Product;
 import com.aselsan.vendingMachine.repositories.ProductRepository;
+import com.aselsan.vendingMachine.response.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.Optional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-/**
- *
- * @author asimk
- */
 @RestController
 @RequestMapping("/products")
 public class ProductController {
-    private ProductRepository productRepository;
     
-    public ProductController(ProductRepository productRepository){
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+    
+    private final ProductRepository productRepository;
+    
+    public ProductController(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
     
     @GetMapping
-    public List<Product> getAllProducts(){
-        return this.productRepository.findAll();
+    public ApiResponse<List<Product>> getAllProducts() {
+        try {
+            List<Product> products = productRepository.findAll();
+            return new ApiResponse<>(true, "Success", products);
+        } catch (Exception e) {
+            logger.error("Error fetching all products: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
+        }
     }
     
+    @CrossOrigin
     @PostMapping
-    public Product createProduct(@RequestBody Product newProduct){
-        return this.productRepository.save(newProduct);
+    @Transactional
+    public ApiResponse<Product> createProduct(@RequestBody Product newProduct) {
+        try {
+            Product product = productRepository.save(newProduct);
+            return new ApiResponse<>(true, "Product created successfully", product);
+        } catch (Exception e) {
+            logger.error("Error creating product: ", e);
+            return new ApiResponse<>(false, "Failed to create product", null);
+        }
     }
     
     @GetMapping("/{productId}")
-    public Product getOneProduct(@PathVariable Long productId){
-        
-        //custom exception
-        return this.productRepository.findById(productId).orElse(null);
+    public ApiResponse<Product> getOneProduct(@PathVariable Long productId) {
+        try {
+            Optional<Product> product = productRepository.findById(productId);
+            if (product.isPresent()) {
+                return new ApiResponse<>(true, "Product found", product.get());
+            }
+            return new ApiResponse<>(false, "Product not found", null);
+        } catch (Exception e) {
+            logger.error("Error fetching product by id: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
+        }
     }
     
+    @CrossOrigin
     @PutMapping("/{productId}")
-    public Product updateOneUser(@PathVariable Long productId, @RequestBody Product newProduct){
-        Optional<Product> product = this.productRepository.findById(productId);
-        if(product.isPresent()){
-            Product foundUser = product.get();
-            foundUser.setProductAmount(newProduct.getProductAmount());
-            this.productRepository.save(foundUser);
-            return foundUser;
-        }
-        else{
-            return null;
+    @Transactional
+    public ApiResponse<Product> updateOneProduct(@PathVariable Long productId, @RequestBody Product newProduct) {
+        try {
+            Optional<Product> product = productRepository.findById(productId);
+            if (product.isPresent()) {
+                Product foundProduct = product.get();
+                foundProduct.setProductAmount(newProduct.getProductAmount());
+                productRepository.save(foundProduct);
+                return new ApiResponse<>(true, "Product updated successfully", foundProduct);
+            }
+            return new ApiResponse<>(false, "Product not found", null);
+        } catch (Exception e) {
+            logger.error("Error updating product: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
         }
     }
     
+    @CrossOrigin
+    @PutMapping("/buyProduct/{productId}")
+    @Transactional
+    public ApiResponse<Product> buyProduct(@PathVariable Long productId) {
+        try {
+            Optional<Product> product = this.productRepository.findById(productId);
+            if (product.isPresent()) {
+                Product foundProduct = product.get();
+                foundProduct.setProductAmount(foundProduct.getProductAmount() - 1);
+                this.productRepository.save(foundProduct);
+                return new ApiResponse<>(true, "The product has been purchased successfully.", foundProduct);
+            } else {
+                return new ApiResponse<>(false, "The product has not been purchased successfully.", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error purchasing product: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
+        }
+    }
+
     @DeleteMapping("/{productId}")
-    public void deleteOneProduct(@PathVariable Long productId){
-        this.productRepository.deleteById(productId);
+    @Transactional
+    public ApiResponse<String> deleteOneProduct(@PathVariable Long productId) {
+        try {
+            this.productRepository.deleteById(productId);
+            return new ApiResponse<>(true, "Product deleted successfully", null);
+        } catch (Exception e) {
+            logger.error("Error deleting product: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
+        }
     }
 }

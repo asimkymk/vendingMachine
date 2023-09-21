@@ -14,13 +14,13 @@ import lombok.Data;
  * @author asimk
  */
 @Entity
-@Table(name="unit")
+@Table(name="supplier")
 @Data
-public class Unit {
+public class Supplier {
     @Id
-    int id;
+    Long id;
     
-    int unitPrice;
-    int unitAmount;
-    int tempAmount;
+    String username;
+    String password;
+    
 }
