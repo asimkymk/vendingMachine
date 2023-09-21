@@ -1,101 +1,80 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.aselsan.vendingMachine.controllers;
 
 import com.aselsan.vendingMachine.entities.ActiveWallet;
 import com.aselsan.vendingMachine.entities.Product;
 import com.aselsan.vendingMachine.repositories.ActiveWalletRepository;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.aselsan.vendingMachine.response.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
-/**
- *
- * @author asimk
- */
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/activeWallet")
 public class ActiveWalletController {
 
-    private ActiveWalletRepository activeWalletRepository;
+    private static final Logger logger = LoggerFactory.getLogger(ActiveWalletController.class);
+
+    private final ActiveWalletRepository activeWalletRepository;
 
     public ActiveWalletController(ActiveWalletRepository activeWalletRepository) {
         this.activeWalletRepository = activeWalletRepository;
     }
 
     @GetMapping
-    public ActiveWallet getActiveWallet() {
-        return this.activeWalletRepository.findById(1l).orElse(null);
+    public ApiResponse<ActiveWallet> getActiveWallet() {
+        try {
+            return new ApiResponse<>(true, "Success", this.activeWalletRepository.findById(1L).orElse(null));
+        } catch (Exception e) {
+            logger.error("Error fetching active wallet: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
+        }
     }
 
     @PutMapping()
     @CrossOrigin
-    public Map<String, Object> updateWallet(@RequestBody Map<String, Integer> requestBody) {
-        Optional<ActiveWallet> activeWallet = this.activeWalletRepository.findById(1l);
-        Map<String, Object> response = new HashMap<>();
-        if (activeWallet.isPresent()) {
-            ActiveWallet foundWallet = activeWallet.get();
-            if (requestBody.get("add") != null) {
-                foundWallet.setWalletAmount(foundWallet.getWalletAmount() + requestBody.get("add"));
+    @Transactional
+    public ApiResponse<ActiveWallet> updateWallet(@RequestBody ActiveWallet requestBody) {
+        try {
+            Optional<ActiveWallet> activeWallet = this.activeWalletRepository.findById(1L);
+            if (activeWallet.isPresent()) {
+                ActiveWallet foundWallet = activeWallet.get();
+                // Assuming the requestBody contains the new wallet amount
+                foundWallet.setWalletAmount(requestBody.getWalletAmount());
+                this.activeWalletRepository.save(foundWallet);
+                return new ApiResponse<>(true, "Wallet updated successfully", foundWallet);
+            } else {
+                return new ApiResponse<>(false, "Wallet not found", null);
             }
-            if (requestBody.get("remove") != null) {
-                foundWallet.setWalletAmount(foundWallet.getWalletAmount() - requestBody.get("remove"));
-            }
-
-            this.activeWalletRepository.save(foundWallet);
-            response.put("process", true);
-            return response;
-        } else {
-            response.put("process", false);
-            return response;
+        } catch (Exception e) {
+            logger.error("Error updating wallet: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
         }
     }
 
     @PutMapping("/buyProduct")
     @CrossOrigin
-    public Map<String, Object> buyProduct(@RequestBody Product product) {
-        Optional<ActiveWallet> activeWallet = this.activeWalletRepository.findById(1l);
-        Map<String, Object> response = new HashMap<>();
-        if (product.getProductAmount() > 0) {
-            if (activeWallet.isPresent()) {
+    @Transactional
+    public ApiResponse<ActiveWallet> buyProduct(@RequestBody Product product) {
+        try {
+            Optional<ActiveWallet> activeWallet = this.activeWalletRepository.findById(1L);
+            if (product.getProductAmount() > 0 && activeWallet.isPresent()) {
                 ActiveWallet foundWallet = activeWallet.get();
-                if(product.getProductPrice()> foundWallet.getWalletAmount()){
-                    response.put("process", false);
-                    response.put("message", "Wallet balance is insufficient.");
-                    return response;
-                }
-                else{
-                    foundWallet.setWalletAmount(foundWallet.getWalletAmount() -  product.getProductPrice());
+                if (product.getProductPrice() > foundWallet.getWalletAmount()) {
+                    return new ApiResponse<>(false, "Wallet balance is insufficient.", null);
+                } else {
+                    foundWallet.setWalletAmount(foundWallet.getWalletAmount() - product.getProductPrice());
                     this.activeWalletRepository.save(foundWallet);
-                    response.put("process", true);
-                    response.put("message", "The product has been purchased successfully.");
-                    return response;
+                    return new ApiResponse<>(true, "The product has been purchased successfully.", foundWallet);
                 }
-                
-                
-
-                
             } else {
-                response.put("process", false);
-                return response;
+                return new ApiResponse<>(false, "Wallet not found or product amount is zero.", null);
             }
+        } catch (Exception e) {
+            logger.error("Error purchasing product: ", e);
+            return new ApiResponse<>(false, "Database error!", null);
         }
-        response.put("process", false);
-        return response;
-        
-
     }
-
 }
