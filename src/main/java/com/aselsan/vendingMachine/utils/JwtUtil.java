@@ -8,6 +8,7 @@ package com.aselsan.vendingMachine.utils;
  *
  * @author asimk
  */
+import com.aselsan.vendingMachine.response.ApiResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -33,6 +34,20 @@ public class JwtUtil {
                 .getBody();
     }
     
+    
+    public static ApiResponse<Boolean> validateToken(String token) {
+        try {
+            Claims claims = JwtUtil.parseToken(token);
+            Date expiration = claims.getExpiration();
+            if (expiration.after(new Date())) {
+                return new ApiResponse<>(true, "Token is valid", true);
+            } else {
+                return new ApiResponse<>(false, "Token has expired", false);
+            }
+        } catch (Exception e) {
+            return new ApiResponse<>(false, "Invalid token", false);
+        }
+    }
     
     
 }
