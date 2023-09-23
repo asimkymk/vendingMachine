@@ -29,6 +29,9 @@ public class ApiResponse<T> {
     public void setSuccess(boolean success) {
         this.success = success;
     }
+    public Boolean getSuccess() {
+        return this.success;
+    }
 
     public String getMessage() {
         return message;
@@ -45,4 +48,5 @@ public class ApiResponse<T> {
     public void setData(T data) {
         this.data = data;
     }
+
 }
