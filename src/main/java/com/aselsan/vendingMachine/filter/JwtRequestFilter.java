@@ -34,10 +34,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         if (username != null) {
-            // Doğrulama başarılı, isteği devam ettir
             filterChain.doFilter(request, response);
         } else {
-            // Doğrulama başarısız, hata döndür
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Unauthorized");
             return;
